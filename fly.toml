@@ -1,0 +1,14 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[[services]]
+  internal_port = 3000
+  protocol = "tcp"
+
+  [[services.http_checks]]
+    path = "/api/auth/status"
+    method = "get"

@@ -1,0 +1,10 @@
+{
+  "name": "andalus-cinema-lab",
+  "scripts": {
+    "build": "npm run build",
+    "start": "npx tsx server/index.ts"
+  },
+  "engines": {
+    "node": "20.x"
+  }
+}
