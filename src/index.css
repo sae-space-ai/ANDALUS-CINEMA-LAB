@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+@theme {
+  --color-andalus-50: #f0fdf4;
+  --color-andalus-100: #dcfce7;
+  --color-andalus-200: #bbf7d0;
+  --color-andalus-300: #86efac;
+  --color-andalus-400: #4ade80;
+  --color-andalus-500: #22c55e;
+  --color-andalus-600: #16a34a;
+  --color-andalus-700: #15803d;
+  --color-andalus-800: #166534;
+  --color-andalus-900: #14532d;
+  --color-andalus-950: #052e16;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #166534;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #22c55e;
+}
+
+/* Animations */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(34, 197, 94, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.6); }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.4s ease-out;
+}
+
+/* Film grain overlay */
+.film-grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+/* Video player custom styles */
+video::-webkit-media-controls-panel {
+  background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+}

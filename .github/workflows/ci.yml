@@ -1,0 +1,55 @@
+name: CI — ANDALUS CINEMA LAB
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Type check (frontend)
+        run: npx tsc --noEmit
+      
+      - name: Build frontend
+        run: npm run build
+      
+      - name: Verify dist output
+        run: |
+          test -f dist/index.html
+          echo "✅ Frontend build OK"
+      
+      # Las pruebas de backend requieren better-sqlite3 (native module)
+      # Se ejecutan localmente con: npx tsx tests/integration.test.ts
+      
+      - name: Security check — no secrets in frontend
+        run: |
+          # Verificar que el bundle frontend NO contiene la API key
+          if grep -r "GEMINI_API_KEY" dist/ 2>/dev/null; then
+            echo "❌ ERROR: API key encontrada en el bundle frontend"
+            exit 1
+          fi
+          echo "✅ No se encontraron secretos en el frontend"
+      
+      - name: Security check — no VITE_ secrets
+        run: |
+          # Verificar que no hay variables VITE_ con secretos
+          if grep -r "VITE_GEMINI" src/ 2>/dev/null; then
+            echo "❌ ERROR: Variables VITE_ con secretos encontradas"
+            exit 1
+          fi
+          echo "✅ No se encontraron variables VITE_ con secretos"
