@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Play, Pause, Download, RotateCcw, Volume2, VolumeX, Maximize } from 'lucide-react';
+import { Play, Pause, Download, Volume2, VolumeX, Maximize } from 'lucide-react';
 
 interface VideoPlayerProps {
   videoUrl: string | null;
@@ -73,6 +73,7 @@ export function VideoPlayer({ videoUrl, fileName, isLoading, loadingStatus }: Vi
 
   const handleDownload = () => {
     if (!videoUrl) return;
+    // Use an anchor with download attribute
     const a = document.createElement('a');
     a.href = videoUrl;
     a.download = fileName || 'andalus-cinema-scene.mp4';
@@ -128,6 +129,7 @@ export function VideoPlayer({ videoUrl, fileName, isLoading, loadingStatus }: Vi
           src={videoUrl}
           className="w-full h-full object-contain"
           playsInline
+          crossOrigin="use-credentials"
           onClick={togglePlay}
         />
 

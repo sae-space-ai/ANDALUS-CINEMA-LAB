@@ -1,14 +1,15 @@
 import React, { useState, useRef } from 'react';
-import { Upload, FileText, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Upload, AlertTriangle, CheckCircle } from 'lucide-react';
 import { readPdf } from '../lib/pdfReader';
 import type { PdfReadResult } from '../lib/pdfReader';
 
 interface PdfUploaderProps {
   onPdfLoaded: (result: PdfReadResult, fileName: string, fileSize: number) => void;
+  onFileUpload: (file: File) => void;
   isProcessing: boolean;
 }
 
-export function PdfUploader({ onPdfLoaded, isProcessing }: PdfUploaderProps) {
+export function PdfUploader({ onPdfLoaded, onFileUpload, isProcessing }: PdfUploaderProps) {
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<string | null>(null);
@@ -16,21 +17,23 @@ export function PdfUploader({ onPdfLoaded, isProcessing }: PdfUploaderProps) {
 
   const handleFile = async (file: File) => {
     setError(null);
-    setProgress('Leyendo PDF...');
+    setProgress('Validando PDF...');
 
     try {
+      // First validate locally
       const result = await readPdf(file);
       
       if (result.needsOcr) {
-        setError('NEEDS_OCR — Este PDF parece estar escaneado y no contiene texto extraíble. Se necesita OCR.');
+        setError('NEEDS_OCR — Este PDF parece estar escaneado y no contiene texto extraíble.');
         setProgress(null);
         return;
       }
 
-      setProgress(`Texto extraído: ${result.totalPages} páginas, ${result.fullText.length.toLocaleString()} caracteres.`);
+      setProgress(`PDF válido: ${result.totalPages} páginas. Subiendo al servidor...`);
       onPdfLoaded(result, file.name, file.size);
       
-      setTimeout(() => setProgress(null), 3000);
+      // Upload to backend
+      onFileUpload(file);
     } catch (err: any) {
       setError(err.message || 'Error procesando el PDF.');
       setProgress(null);
@@ -47,6 +50,8 @@ export function PdfUploader({ onPdfLoaded, isProcessing }: PdfUploaderProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) handleFile(file);
+    // Reset input
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (

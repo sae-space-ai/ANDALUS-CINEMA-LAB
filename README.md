@@ -1,106 +1,130 @@
 # ANDALUS CINEMA LAB
 ### AL-ANDALUS AI — Laboratorio cinematográfico privado
 
-## Qué es
+## Arquitectura
 
-Herramienta privada que convierte fragmentos de un PDF (obra propia) en vídeo cinematográfico real mediante IA.
+```
+┌─────────────────┐         ┌─────────────────────────────┐
+│   FRONTEND      │  HTTP   │      BACKEND (Fastify)      │
+│   React + Vite  │ ◄─────► │                             │
+│   (dist/)       │  +Auth  │  ┌─────────┐ ┌──────────┐  │
+│                 │         │  │ SQLite  │ │ Archivos │  │
+│  SIN API Key    │         │  │ (datos) │ │ (PDF/MP4)│  │
+│  SIN llamadas   │         │  └─────────┘ └──────────┘  │
+│  directas a IA  │         │                             │
+└─────────────────┘         │  ┌─────────┐ ┌──────────┐  │
+                            │  │ Gemini  │ │   Veo    │  │
+                            │  │  (API)  │ │  (API)   │  │
+                            │  └─────────┘ └──────────┘  │
+                            │                             │
+                            │  GEMINI_API_KEY (env only)  │
+                            └─────────────────────────────┘
+```
 
-**Flujo:** PDF → Texto → Escena → Vídeo → MP4
+## Seguridad
+
+- ✅ API key SOLO en variable de entorno del servidor
+- ✅ Frontend NO contiene ni envía la API key
+- ✅ Sesiones con cookies HttpOnly + SameSite=strict
+- ✅ Contraseña con bcrypt (hash, nunca texto plano)
+- ✅ PDFs y vídeos en directorio privado (DATA_DIR)
+- ✅ Protección contra path traversal
+- ✅ CORS configurado para origen específico
+- ✅ Logs sin datos sensibles (redactados)
 
 ## Cómo arrancar
 
+### 1. Configurar variables de entorno
+
 ```bash
-npm install
-npm run dev
+cp .env.example .env
+# Editar .env y añadir GEMINI_API_KEY
 ```
 
-Abre `http://localhost:5173`
-
-## Cómo construir para producción
+### 2. Construir frontend
 
 ```bash
 npm run build
 ```
 
-El resultado queda en `dist/`.
+### 3. Arrancar servidor
 
-## Qué funciona realmente
-
-- ✅ Subida real de PDF con validación
-- ✅ Extracción auténtica de texto (pdfjs-dist)
-- ✅ Detección de PDFs escaneados (NEEDS_OCR)
-- ✅ Selección de capítulos, páginas o fragmentos personalizados
-- ✅ Confirmación de derechos antes de procesar
-- ✅ Integración con Gemini API para adaptación literaria
-- ✅ Generación de biblia cinematográfica
-- ✅ Editor de escena con campos editables
-- ✅ Motor de vídeo con Google Veo (requiere API key)
-- ✅ Polling asíncrono de estado de generación
-- ✅ Descarga real de MP4
-- ✅ Reproductor HTML5 integrado
-- ✅ Persistencia de proyectos en localStorage
-- ✅ Acceso privado con contraseña
-- ✅ Panel de diagnóstico del sistema
-- ✅ Estimación de costes
-
-## Cómo activar Gemini/Veo
-
-1. Accede a la aplicación con tu contraseña privada
-2. Haz clic en el icono de ⚙️ (Configuración)
-3. Introduce tu `GEMINI_API_KEY` de Google AI Studio
-4. Selecciona modelo de texto y vídeo
-5. Guarda
-
-La API key se almacena SOLO en tu navegador (localStorage).
-
-## Dónde se configura la clave
-
-En el panel de Configuración (icono ⚙️). También puedes establecerla directamente:
-
-```javascript
-localStorage.setItem('andalus_gemini_api_key', 'TU_KEY_AQUI');
+```bash
+npx tsx server/index.ts
 ```
 
-## Cómo generar la primera escena
+El servidor arranca en `http://localhost:3000` y sirve el frontend desde `dist/`.
 
-1. Sube un PDF de tu obra
-2. Confirma que tienes derechos
-3. Selecciona un capítulo, páginas o fragmento
-4. Elige estilo cinematográfico
-5. Pulsa "Generar adaptación con IA"
-6. Revisa y edita la escena si es necesario
-7. Aprueba la escena
-8. Pulsa "Generar vídeo real"
-9. Espera a que Veo procese (puede tardar minutos)
-10. Reproduce y descarga el MP4
+### Desarrollo
 
-## Dónde se encuentra el MP4
+```bash
+# Terminal 1: Frontend
+npm run dev
 
-El vídeo se descarga del proveedor de IA y se reproduce directamente en la interfaz. El botón "Descargar MP4" guarda el archivo en tu equipo.
+# Terminal 2: Backend
+npx tsx server/index.ts
+```
+
+Frontend en `http://localhost:5173`, Backend en `http://localhost:3000`.
+
+## Flujo completo
+
+1. **Acceso privado** → Contraseña (se establece en primer acceso)
+2. **Subir PDF** → Se valida, extrae texto y guarda en DATA_DIR/pdfs/
+3. **Seleccionar fragmento** → Por capítulos, páginas o texto personalizado
+4. **Adaptar con Gemini** → El backend llama a la API y devuelve escena
+5. **Aprobar escena** → Edición y confirmación humana
+6. **Generar vídeo** → Backend envía prompt a Veo, hace polling, descarga MP4
+7. **Reproducir/Descargar** → MP4 real servido desde DATA_DIR/videos/
+
+## Estructura
+
+```
+├── server/
+│   ├── index.ts        # Servidor Fastify + rutas API
+│   ├── db.ts           # SQLite (better-sqlite3)
+│   ├── auth.ts         # Sesiones HttpOnly + bcrypt
+│   ├── pdf.ts          # Lectura real de PDF (pdfjs-dist)
+│   ├── gemini.ts       # Adaptación literaria (Gemini API)
+│   ├── veo.ts          # Motor de vídeo (Veo API + polling)
+│   └── storage.ts      # Archivos privados (PDFs, MP4s)
+├── src/                # Frontend React
+│   ├── App.tsx         # Aplicación principal
+│   ├── lib/
+│   │   ├── api.ts      # Cliente HTTP al backend
+│   │   ├── pdfReader.ts # Validación local de PDF
+│   │   ├── gemini.ts   # Indicadores de estado (sin API)
+│   │   └── videoEngine.ts # Indicadores (sin API)
+│   └── components/
+├── data/               # Persistencia (creado al arrancar)
+│   ├── andalus_cinema.db
+│   ├── pdfs/
+│   └── videos/
+└── dist/               # Frontend compilado
+```
+
+## Variables de entorno
+
+| Variable | Obligatoria | Descripción |
+|----------|-------------|-------------|
+| `GEMINI_API_KEY` | ✅ | Clave de Google AI para Gemini y Veo |
+| `SESSION_SECRET` | ✅ | Secreto para firmar cookies |
+| `DATA_DIR` | No | Directorio de datos (default: ./data) |
+| `PORT` | No | Puerto del servidor (default: 3000) |
+| `TEXT_MODEL` | No | Modelo de texto (default: gemini-2.0-flash) |
+| `VIDEO_MODEL` | No | Modelo de vídeo (default: veo-2.0-generate-001) |
+| `APP_ORIGIN` | No | Origen CORS (default: http://localhost:5173) |
+| `MAX_UPLOAD_MB` | No | Tamaño máximo PDF (default: 50) |
 
 ## Bloqueos externos
 
-- **Sin API Key:** La lectura de PDF funciona, pero la adaptación con IA y la generación de vídeo están BLOQUEADAS.
-- **Sin acceso a Veo:** Si tu cuenta de Google AI no tiene acceso a Veo, la generación de vídeo fallará con error específico.
-- **Coste:** La generación de vídeo con Veo tiene coste real por generación. Se muestra estimación antes de confirmar.
+- **Sin GEMINI_API_KEY:** Lectura de PDF funciona. IA bloqueada.
+- **Sin acceso a Veo:** Generación de vídeo falla con error específico.
+- **Coste:** Cada generación de vídeo cobra del proveedor (~$0.50).
 
-## Stack
+## Privacidad
 
-- React 18 + TypeScript
-- Vite
-- Tailwind CSS v4
-- pdfjs-dist (lectura real de PDF)
-- Google Gemini API (texto + vídeo)
-- localStorage (persistencia privada)
-
-## Seguridad
-
-- Acceso protegido por contraseña (primer acceso la establece)
-- La API key NUNCA se envía al frontend como código
-- Los PDFs no se envían completos a APIs externas
-- Solo el fragmento seleccionado se procesa
-- Confirmación explícita de derechos requerida
-
-## Privado
-
-Esta herramienta es para un solo operador. No tiene registro público, red social, ni pagos.
+- Un solo operador (propietario)
+- Sin registro público
+- Sin datos compartidos
+- PDFs y vídeos nunca salen del servidor excepto al propietario

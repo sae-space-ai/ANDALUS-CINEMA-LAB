@@ -1,10 +1,9 @@
 import React from 'react';
 import { Folder, Trash2, Clock, Film, FileText, ChevronRight } from 'lucide-react';
-import type { Project } from '../types';
 
 interface ProjectLibraryProps {
-  projects: Project[];
-  onSelect: (project: Project) => void;
+  projects: any[];
+  onSelect: (project: any) => void;
   onDelete: (id: string) => void;
 }
 
@@ -42,7 +41,7 @@ export function ProjectLibrary({ projects, onSelect, onDelete }: ProjectLibraryP
   );
 }
 
-function ProjectCard({ project, onSelect, onDelete }: { project: Project; onSelect: () => void; onDelete: () => void }) {
+function ProjectCard({ project, onSelect, onDelete }: { project: any; onSelect: () => void; onDelete: () => void }) {
   const statusColors: Record<string, string> = {
     CREATED: 'text-gray-400',
     UPLOADED: 'text-blue-400',
@@ -75,12 +74,16 @@ function ProjectCard({ project, onSelect, onDelete }: { project: Project; onSele
     CANCELLED: 'Cancelado',
   };
 
+  const hasVideo = !!project.video_path;
+  const updatedAt = project.updated_at || project.updatedAt;
+  const pageCount = project.pages?.length || '—';
+
   return (
     <div className="group flex items-center gap-4 p-4 bg-gray-900/50 border border-gray-800 rounded-xl hover:border-andalus-700/50 hover:bg-andalus-900/10 transition-all cursor-pointer"
       onClick={onSelect}
     >
       <div className="shrink-0 w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center">
-        {project.videoUrl ? (
+        {hasVideo ? (
           <Film className="w-5 h-5 text-andalus-400" />
         ) : (
           <FileText className="w-5 h-5 text-gray-500" />
@@ -96,12 +99,14 @@ function ProjectCard({ project, onSelect, onDelete }: { project: Project; onSele
             {statusLabels[project.status] || project.status}
           </span>
           <span className="text-xs text-gray-600">
-            {project.pages.length} págs
+            {project.pdf_file_name || project.pdfFileName}
           </span>
-          <span className="text-xs text-gray-600 flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            {new Date(project.updatedAt).toLocaleDateString('es-ES')}
-          </span>
+          {updatedAt && (
+            <span className="text-xs text-gray-600 flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              {new Date(updatedAt).toLocaleDateString('es-ES')}
+            </span>
+          )}
         </div>
       </div>
 
