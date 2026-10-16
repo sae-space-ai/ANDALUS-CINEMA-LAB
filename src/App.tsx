@@ -22,6 +22,7 @@ export default function App() {
   // Auth
   const [isAuth, setIsAuth] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
+  const [backendAvailable, setBackendAvailable] = useState(true);
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const [serverStatus, setServerStatus] = useState({
@@ -88,13 +89,16 @@ export default function App() {
     try {
       const status = await api.getAuthStatus();
       setIsAuth(status.authenticated);
+      setBackendAvailable(true);
       setServerStatus({
         geminiConfigured: status.geminiConfigured,
         veoConfigured: status.veoConfigured,
         passwordSet: status.passwordSet,
       });
       await refreshStatus();
-    } catch {
+    } catch (error) {
+      // Backend not available
+      setBackendAvailable(false);
       setIsAuth(false);
     } finally {
       setAuthChecked(true);
@@ -301,6 +305,59 @@ export default function App() {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="w-8 h-8 border-3 border-andalus-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Backend not available
+  if (!backendAvailable) {
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 mb-4">
+              <Clapperboard className="w-8 h-8 text-andalus-400" />
+            </div>
+            <h1 className="text-2xl font-bold text-white">AL-ANDALUS AI</h1>
+            <p className="text-andalus-400 text-sm font-medium tracking-wider mt-1">ANDALUS CINEMA LAB</p>
+          </div>
+
+          <div className="bg-red-900/20 border border-red-800/50 rounded-xl p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-6 h-6 text-red-400 shrink-0 mt-0.5" />
+              <div>
+                <h2 className="text-lg font-semibold text-red-300 mb-2">
+                  Servidor no disponible
+                </h2>
+                <p className="text-sm text-red-200/80 mb-4">
+                  No se puede conectar con el backend de ANDALUS CINEMA LAB.
+                </p>
+                <div className="bg-gray-900/50 rounded-lg p-4 text-left space-y-2">
+                  <p className="text-xs text-gray-400 font-medium mb-2">Para iniciar el servidor:</p>
+                  <code className="text-xs text-andalus-300 block">
+                    npm run build<br />
+                    npm start
+                  </code>
+                  <p className="text-xs text-gray-500 mt-3">
+                    O ejecuta: <code className="text-andalus-400">./start.sh</code>
+                  </p>
+                </div>
+                <p className="text-xs text-gray-400 mt-4">
+                  El servidor debe estar corriendo en el puerto 3000.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 text-center">
+            <button
+              onClick={checkAuth}
+              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm rounded-lg transition-all"
+            >
+              Reintentar conexión
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
